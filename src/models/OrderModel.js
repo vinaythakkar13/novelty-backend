@@ -304,7 +304,7 @@ export const updateOrderAdvancePayment = async (orderId, advance_received) => {
 
 export const updateOrderFullPayment = async (orderId, full_received) => {
     const sql = `UPDATE orders SET full_received = ? WHERE id = ?`;
-        const result = await query(sql, [full_received, orderId]);
+    const result = await query(sql, [full_received, orderId]);
     return result;
 }
 
@@ -592,8 +592,6 @@ export const getCompletedOrdersForStaff = async ({
 
 //     // Build WHERE clause
 //     const whereClause = conditions.join(" AND ");
-
-//     console.log(whereClause, "whereClause", params, "params");
 
 //     const sql = `
 //         SELECT 

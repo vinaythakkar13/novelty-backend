@@ -1,5 +1,5 @@
 import express from 'express';
-import { adminLogin, addAdmin,  getAllAdmin, deleteAdminProfile, createTaskForStaffController, getAllTasksForStaffController, updateTaskStatusController, deleteTaskForStaffController, getAllCompletedTasksForStaffController } from '../controllers/adminController.js';
+import { adminLogin, addAdmin, getAllAdmin, deleteAdminProfile, createTaskForStaffController, getAllTasksForStaffController, updateTaskStatusController, deleteTaskForStaffController, getAllCompletedTasksForStaffController } from '../controllers/adminController.js';
 import { refreshToken, validateToken } from '../controllers/authController.js';
 import { authenticateToken, requireStaffOrAdmin } from '../middleware/auth.js';
 import { requireAdmin } from '../middleware/auth.js';
@@ -148,7 +148,7 @@ adminRoutes.get('/validate', validateToken);
 // adminRoutes.get('/get-all-tasks', authenticateToken, requireAdmin, getAllTasks);
 adminRoutes.post('/add-admin', authenticateToken, requireAdmin, addAdmin);
 
-adminRoutes.get('/get-all-admin',authenticateToken, requireAdmin, getAllAdmin);
+adminRoutes.get('/get-all-admin', authenticateToken, requireAdmin, getAllAdmin);
 
 adminRoutes.delete('/remove-admin', authenticateToken, requireAdmin, deleteAdminProfile);
 

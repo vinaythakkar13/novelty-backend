@@ -178,8 +178,8 @@ export const createOrderByStaffController = async (req, res) => {
         }
       });
     } catch (err) {
-      try { await conn.rollback(); } catch {}
-      try { conn.release(); } catch {}
+      try { await conn.rollback(); } catch { }
+      try { conn.release(); } catch { }
       return res.status(500).json({ success: false, message: 'Failed to create order', error: err.message });
     }
   } catch (error) {
@@ -219,16 +219,13 @@ export const getTasksForStaffController = async (req, res) => {
 export const getAllCompletedTasksForStaffController = async (req, res) => {
   try {
     const staffId = req.user.id;
-    console.log(req.user, "req.user");
-    if(!staffId) {
+    if (!staffId) {
       return res.status(400).json({ success: false, message: 'Unable to resolve staff id' });
     }
-    console.log(staffId, "staffId");
     const tasks = await getTasksForStaff(staffId, true);
     return res.status(200).json({ success: true, data: tasks });
   }
   catch (error) {
-    console.log(error, "error");
     return res.status(500).json({ success: false, message: 'Failed to get completed tasks for staff' });
   }
 }
@@ -239,7 +236,6 @@ export const updateTaskStatusController = async (req, res) => {
     const userId = req.user.id;
     // check this task is assigned to the staff
     const task = await getTaskByStaffIdAndTaskId(userId, taskId);
-    console.log(task, "task", userId, taskId, reason);
     if (!task || task.length === 0) {
       return res.status(400).json({ success: false, message: 'Task not found' });
     }
