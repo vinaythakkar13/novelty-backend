@@ -297,3 +297,46 @@ export const deleteTaskForStaff = async (taskId) => {
     const result = await query(sql, [taskId]);
     return result;
 }
+
+export const updateTaskDetails = async (taskId, updateData) => {
+    const updateFields = [];
+    const updateValues = [];
+    
+    // Build dynamic update query based on provided fields
+    if (updateData.title !== undefined) {
+        updateFields.push('title = ?');
+        updateValues.push(updateData.title);
+    }
+    
+    if (updateData.deadline !== undefined) {
+        updateFields.push('deadline = ?');
+        // Convert ISO date string to DATE format (YYYY-MM-DD)
+        const deadlineDate = updateData.deadline ? new Date(updateData.deadline).toISOString().split('T')[0] : null;
+        updateValues.push(deadlineDate);
+    }
+    
+    if (updateData.notes !== undefined) {
+        updateFields.push('notes = ?');
+        updateValues.push(updateData.notes || null);
+    }
+    
+    // Always update the updated_at timestamp
+    updateFields.push('updated_at = NOW()');
+    
+    if (updateFields.length === 1) {
+        // Only updated_at, no actual fields to update
+        return { success: false, message: 'No fields to update' };
+    }
+    
+    updateValues.push(taskId);
+    
+    const sql = `UPDATE tasks SET ${updateFields.join(', ')} WHERE id = ?`;
+    const result = await query(sql, updateValues);
+    return result;
+}
+
+export const getTaskById = async (taskId) => {
+    const sql = `SELECT id as task_id, title, staff_id, deadline, notes, assigned_by, assigned_at, completed_at, updated_at, status, reason, created_at FROM tasks WHERE id = ?`;
+    const result = await query(sql, [taskId]);
+    return result.length > 0 ? result[0] : null;
+}

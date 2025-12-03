@@ -253,7 +253,42 @@ export const getAllOrdersByStaffId = async ({ staffId, page = 1, limit = 10, sea
 }
 
 // Get orders for a staff (grouped with products). Convenience function without pagination.
-export const getOrdersForStaff = async (staffId) => {
+export const getOrdersForStaff = async (staffId, search, sort = 'deliveryAsc') => {
+    
+    // Build search condition
+    let searchCondition = "";
+    const params = [staffId];
+    
+    if (search && typeof search === "string" && search.trim() !== "") {
+        const normalizedSearch = search.trim();
+        const like = `%${normalizedSearch}%`;
+        searchCondition = "AND (o.user_name LIKE ? OR o.user_phone LIKE ?)";
+        params.push(like, like);
+    }
+
+    // Build sort/order by clause
+    let orderBy = "o.id DESC"; // default fallback
+    switch (sort) {
+        case "deliveryAsc":
+            orderBy = "o.requested_delivery_date ASC, o.id DESC";
+            break;
+        case "deliveryDesc":
+            orderBy = "o.requested_delivery_date DESC, o.id DESC";
+            break;
+        case "createdAsc":
+            orderBy = "o.created_at ASC, o.id DESC";
+            break;
+        case "createdDesc":
+            orderBy = "o.created_at DESC, o.id DESC";
+            break;
+        case "recent":
+            orderBy = "o.id DESC";
+            break;
+        default:
+            // Default to deliveryAsc if invalid sort value
+            orderBy = "o.requested_delivery_date ASC, o.id DESC";
+    }
+
     const sql = `
       SELECT 
         o.id AS order_id,
@@ -284,9 +319,10 @@ export const getOrdersForStaff = async (staffId) => {
           AND o.review_link_sent = 1
           AND o.full_received = 1
         )
-      ORDER BY o.id DESC
+        ${searchCondition}
+      ORDER BY ${orderBy}
     `;
-    const rows = await query(sql, [staffId]);
+    const rows = await query(sql, params);
     return formatOrders(rows);
 }
 
@@ -304,7 +340,7 @@ export const updateOrderAdvancePayment = async (orderId, advance_received) => {
 
 export const updateOrderFullPayment = async (orderId, full_received) => {
     const sql = `UPDATE orders SET full_received = ? WHERE id = ?`;
-    const result = await query(sql, [full_received, orderId]);
+        const result = await query(sql, [full_received, orderId]);
     return result;
 }
 
@@ -593,6 +629,8 @@ export const getCompletedOrdersForStaff = async ({
 //     // Build WHERE clause
 //     const whereClause = conditions.join(" AND ");
 
+//     console.log(whereClause, "whereClause", params, "params");
+
 //     const sql = `
 //         SELECT 
 //             o.*
@@ -828,4 +866,25 @@ export const getCompletedOrdersForAdmin = async ({
         totalPages: Math.ceil((countRows[0]?.total || 0) / limit),
         data: formatOrders(rows)
     };
+}
+
+export const updateOrderAdvancePaymentForAdmin = async (orderId, advance_received) => {
+    const sql = `UPDATE orders SET advance_received = ? WHERE id = ?`;
+    const result = await query(sql, [advance_received, orderId]);
+    return result;
+}
+
+export const updateOrderFullPaymentForAdmin = async (orderId, full_received) => {
+    const sql = `UPDATE orders SET full_received = ? WHERE id = ?`;
+    const result = await query(sql, [full_received, orderId]);
+    return result;
+}
+
+export const updateOrderStatusForAdmin = async (orderId, status, notes = '') => {
+
+    // if status is deleivered then delivery date should be current date otherwise it should be null
+    const delivery_date = status === 'delivered' ? new Date() : null;
+    const sql = `UPDATE orders SET status = ?, delivery_notes = ?, actual_delivery_date = ? WHERE id = ?`;
+    const result = await query(sql, [status, notes, delivery_date, orderId]);
+    return result;
 }

@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAllStaff, addStaff , staffLogin, updateStaff, getTasksForStaffController, updateTaskStatusController, getAllCompletedTasksForStaffController, staffDashboardController, createOrderByStaffController } from '../controllers/staffController.js';
+import { getAllStaff, addStaff , staffLogin, updateStaff, getTasksForStaffController, updateTaskStatusController, getAllCompletedTasksForStaffController, staffDashboardController, createOrderByStaffController, updateStaffCreatedOrderController } from '../controllers/staffController.js';
 import { getOrdersForStaffController, updateOrderAdvancePaymentController, updateOrderFullPaymentController, updateOrderReviewLinkSentController, updateOrderProductStatusController, updateOrderStatusController, getCompletedOrdersForStaffController } from '../controllers/orderController.js';
 import { authenticateToken, requireAdmin, requireStaff } from '../middleware/auth.js';
 
@@ -39,4 +39,8 @@ router.get('/get-completed-orders', authenticateToken, requireStaff, getComplete
 
 // staff dashboard API
 router.get('/staff-dashboard', authenticateToken, requireStaff, staffDashboardController);
+
+
+// update staff  order
+router.put('/update-order', authenticateToken, requireStaff, updateStaffCreatedOrderController);
 export default router;

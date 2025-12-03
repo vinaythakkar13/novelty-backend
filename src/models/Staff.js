@@ -142,3 +142,9 @@ export const updateStaffData = async (id) => {
   const result = await query(sql, [newActive, id]);
   return { success: true, message: 'Staff updated successfully', data: { active: newActive }   };
 }
+
+export const deleteStaffById = async (id) => {
+  const sql = `DELETE FROM staff WHERE id = ?`;
+  const result = await query(sql, [id]);
+  return { success: true, message: 'Staff deleted successfully' };
+}

@@ -1,9 +1,9 @@
 import express from 'express';
-import { adminLogin, addAdmin, getAllAdmin, deleteAdminProfile, createTaskForStaffController, getAllTasksForStaffController, updateTaskStatusController, deleteTaskForStaffController, getAllCompletedTasksForStaffController } from '../controllers/adminController.js';
+import { adminLogin, addAdmin,  getAllAdmin, deleteAdminProfile, createTaskForStaffController, getAllTasksForStaffController, updateTaskStatusController, deleteTaskForStaffController, getAllCompletedTasksForStaffController, deleteStaffController } from '../controllers/adminController.js';
 import { refreshToken, validateToken } from '../controllers/authController.js';
 import { authenticateToken, requireStaffOrAdmin } from '../middleware/auth.js';
 import { requireAdmin } from '../middleware/auth.js';
-import { getAllOrdersForAdminController, getCompletedOrdersControllerForAdmin } from '../controllers/orderController.js';
+import { getAllOrdersForAdminController, getCompletedOrdersControllerForAdmin, updateOrderAdvancePaymentController, updateOrderAdvancePaymentControllerForAdmin, updateOrderFullPaymentControllerForAdmin, updateOrderStatusControllerForAdmin } from '../controllers/orderController.js';
 
 const adminRoutes = express.Router();
 
@@ -148,7 +148,7 @@ adminRoutes.get('/validate', validateToken);
 // adminRoutes.get('/get-all-tasks', authenticateToken, requireAdmin, getAllTasks);
 adminRoutes.post('/add-admin', authenticateToken, requireAdmin, addAdmin);
 
-adminRoutes.get('/get-all-admin', authenticateToken, requireAdmin, getAllAdmin);
+adminRoutes.get('/get-all-admin',authenticateToken, requireAdmin, getAllAdmin);
 
 adminRoutes.delete('/remove-admin', authenticateToken, requireAdmin, deleteAdminProfile);
 
@@ -173,6 +173,13 @@ adminRoutes.get('/get-all-orders', authenticateToken, requireAdmin, getAllOrders
 
 adminRoutes.get('/get-completed-orders', authenticateToken, requireAdmin, getCompletedOrdersControllerForAdmin);
 
+adminRoutes.put('/update-order-advance-payment', authenticateToken, requireAdmin, updateOrderAdvancePaymentControllerForAdmin);
+adminRoutes.put('/update-order-full-payment', authenticateToken, requireAdmin, updateOrderFullPaymentControllerForAdmin);
+adminRoutes.put('/update-order-status', authenticateToken, requireAdmin, updateOrderStatusControllerForAdmin);
+
+
+//delete staff by admin
+adminRoutes.delete('/delete-staff', authenticateToken, requireAdmin, deleteStaffController);
 
 /**
  * @swagger

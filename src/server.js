@@ -2,9 +2,6 @@ import app from './app.js';
 import dotenv from 'dotenv';
 import pool from './config/database.js';
 import { createOrderTable, createOrderProductsTable } from './models/OrderModel.js';
-import { createStaffTable } from './models/Staff.js';
-import { createTaskTable } from './models/TaskModel.js';
-import { createAdminTable } from './models/AdminModel.js';
 
 dotenv.config();
 
@@ -15,18 +12,9 @@ const startServer = async () => {
     await pool.getConnection();
     console.log("✅ DB connected");
 
-    // ✅ CREATE TABLES HERE (create parent tables first)
+    // ✅ CREATE TABLES HERE
     (async () => {
-      // create admins and staff first because other tables depend on them
-      await createAdminTable();
-      await createStaffTable();
-
-      // tasks reference staff and admins
-      await createTaskTable();
-
-      // orders reference staff
       await createOrderTable();
-      // order_products reference orders
       await createOrderProductsTable();
     })();
 
