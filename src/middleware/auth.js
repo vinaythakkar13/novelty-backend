@@ -9,19 +9,18 @@ export const authenticateToken = (req, res, next) => {
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
   if (!token) {
-    return res.status(401).json({ 
-      success: false, 
+    return res.status(401).json({
+      success: false,
       message: 'Access token required',
       code: 'MISSING_TOKEN'
     });
   }
 
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    console.log("Token verification result:", err, user);
     if (err) {
       let message = 'Invalid or expired token';
       let code = 'INVALID_TOKEN';
-      
+
       if (err.name === 'TokenExpiredError') {
         message = 'Token has expired. Please login again.';
         code = 'TOKEN_EXPIRED';
@@ -29,15 +28,15 @@ export const authenticateToken = (req, res, next) => {
         message = 'Invalid token format';
         code = 'INVALID_TOKEN_FORMAT';
       }
-      
-      return res.status(403).json({ 
-        success: false, 
+
+      return res.status(403).json({
+        success: false,
         message,
         code,
         expiredAt: err.expiredAt || null
       });
     }
-    
+
     // Add user info to request object
     req.user = user;
     next();
@@ -50,16 +49,16 @@ export const authenticateToken = (req, res, next) => {
  */
 export const requireAdmin = (req, res, next) => {
   if (!req.user) {
-    return res.status(401).json({ 
-      success: false, 
-      message: 'Authentication required' 
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required'
     });
   }
 
   if (req.user.role !== 'admin') {
-    return res.status(403).json({ 
-      success: false, 
-      message: 'Admin access required' 
+    return res.status(403).json({
+      success: false,
+      message: 'Admin access required'
     });
   }
 
@@ -68,16 +67,16 @@ export const requireAdmin = (req, res, next) => {
 
 export const requireStaffOrAdmin = (req, res, next) => {
   if (!req.user) {
-    return res.status(401).json({ 
-      success: false, 
-      message: 'Authentication required' 
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required'
     });
   }
-  
+
   if (req.user.role !== 'staff' && req.user.role !== 'admin') {
-    return res.status(403).json({ 
-      success: false, 
-      message: 'Staff or admin access required' 
+    return res.status(403).json({
+      success: false,
+      message: 'Staff or admin access required'
     });
   }
 
@@ -86,15 +85,15 @@ export const requireStaffOrAdmin = (req, res, next) => {
 
 export const requireStaff = (req, res, next) => {
   if (!req.user) {
-    return res.status(401).json({ 
-      success: false, 
-      message: 'Authentication required' 
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required'
     });
   }
   if (req.user.role !== 'staff') {
-    return res.status(403).json({ 
-      success: false, 
-      message: 'Staff access required' 
+    return res.status(403).json({
+      success: false,
+      message: 'Staff access required'
     });
   }
   next();
@@ -105,7 +104,7 @@ export const requireStaff = (req, res, next) => {
  * Utility function to create secure JWT tokens with 2-hour expiration
  */
 export const generateToken = (payload, expiresIn = '2h') => {
-  return jwt.sign(payload, process.env.JWT_SECRET, { 
+  return jwt.sign(payload, process.env.JWT_SECRET, {
     expiresIn,
     issuer: 'noverlty',
   });
