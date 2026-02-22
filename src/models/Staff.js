@@ -2,8 +2,8 @@ import { query } from '../config/database.js';
 import { generatePassword, generateStaffId } from '../helper/utils.js';
 import bcrypt from 'bcrypt';
 
-export const createStaffTable =  async () => {
-  const sql =  `CREATE TABLE IF NOT EXISTS staff (
+export const createStaffTable = async () => {
+  const sql = `CREATE TABLE IF NOT EXISTS staff (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   phone VARCHAR(255) NOT NULL,
@@ -11,7 +11,8 @@ export const createStaffTable =  async () => {
   password VARCHAR(255) NOT NULL,
   active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  staff_id VARCHAR(255) NOT NULL UNIQUE
+  staff_id VARCHAR(255) NOT NULL UNIQUE,
+  fcm_token TEXT DEFAULT NULL
   )`
 
   const result = await query(sql);
@@ -57,6 +58,7 @@ export const getAllStaffData = async ({ search = "", status = "all", sort = "rec
     } else {
       searchCondition = "WHERE active = ?";
     }
+    // Corrected chunk: params.push(activeValue) should happen AFTER the SQL construction is finalizeed if using push
     params.push(activeValue);
   }
 
@@ -83,36 +85,36 @@ export const createStaff = async (staffData) => {
     if (isStaffExistsResult.length > 0) {
       return { success: false, message: `Staff with this email already exists` };
     }
-    
+
     const staffId = generateStaffId();
     const password = generatePassword();
     const active = true;
     const hashedPassword = await bcrypt.hash(password, 10);
-    
+
     // Use NOW() in SQL instead of passing Date object to avoid timezone issues
     //by default active is true
     const sql = `INSERT INTO staff (name, phone, email, password, active, created_at, staff_id) VALUES (?, ?, ?, ?, ?, NOW(), ?)`;
     const result = await query(sql, [name, phone, email, hashedPassword, active, staffId]);
-    
+
     // For INSERT, mysql2 returns ResultSetHeader object with affectedRows and insertId
     const affectedRows = result?.affectedRows;
     const insertId = result?.insertId;
-    
+
     // Check if insert was successful
     if (!affectedRows || affectedRows === 0) {
       return { success: false, message: `Failed to create staff - no rows affected` };
     }
-    
+
     // Verify the insert by querying the database immediately
     const verifySql = `SELECT id, name, email, phone, staff_id, active FROM staff WHERE id = ?`;
     const verifyResult = await query(verifySql, [insertId]);
-    
+
     if (verifyResult.length === 0) {
       return { success: false, message: `Failed to create staff - data not found after insert` };
     }
-    
-    return { 
-      success: true, 
+
+    return {
+      success: true,
       message: `Staff ${name} created successfully`,
       data: {
         id: insertId,
@@ -131,7 +133,7 @@ export const createStaff = async (staffData) => {
 
 // update staff data by id
 export const updateStaffData = async (id) => {
-// if active is true, set active to false, if active is false, set active to true
+  // if active is true, set active to false, if active is false, set active to true
   const staff = await getStaff(id);
   if (!staff || staff.length === 0) {
     return { success: false, message: 'Staff not found' };
@@ -140,11 +142,17 @@ export const updateStaffData = async (id) => {
   const newActive = !active;
   const sql = `UPDATE staff SET active = ? WHERE id = ?`;
   const result = await query(sql, [newActive, id]);
-  return { success: true, message: 'Staff updated successfully', data: { active: newActive }   };
+  return { success: true, message: 'Staff updated successfully', data: { active: newActive } };
 }
 
 export const deleteStaffById = async (id) => {
   const sql = `DELETE FROM staff WHERE id = ?`;
   const result = await query(sql, [id]);
   return { success: true, message: 'Staff deleted successfully' };
+}
+
+export const updateStaffFcmToken = async (id, fcmToken) => {
+  const sql = `UPDATE staff SET fcm_token = ? WHERE id = ?`;
+  const result = await query(sql, [fcmToken, id]);
+  return result;
 }
