@@ -1,4 +1,5 @@
 import { createOrder, createOrderProductsTable, createOrderTable, getAllOrders, getAllOrdersByStaffId, getOrdersForStaff, updateOrderAdvancePayment, updateOrderFullPayment, updateOrderReviewLinkSent, updateOrderProductsStatus, updateOrderStatus, getAllOrdersForAdmin, getCompletedOrdersForAdmin, getCompletedOrdersForStaff, updateOrderAdvancePaymentForAdmin, updateOrderFullPaymentForAdmin, updateOrderStatusForAdmin } from '../models/OrderModel.js';
+import { notifyAdmins } from '../services/notificationService.js';
 
 (async () => {
   await createOrderTable();
@@ -9,6 +10,12 @@ export const createOrderController = async (req, res) => {
   try {
     const orderData = req.body;
     const order = await createOrder(orderData);
+
+    // Trigger notification to admin
+    if (order.success || (order.affectedRows && order.affectedRows > 0) || order.insertId) {
+      notifyAdmins('New Order Created', `A new order has been created for ${orderData.user_name}`);
+    }
+
     res.status(201).json({ success: true, data: order });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to create order' });

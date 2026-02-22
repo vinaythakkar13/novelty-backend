@@ -134,3 +134,29 @@ export const validateToken = async (req, res) => {
         });
     }
 };
+
+/**
+ * Update FCM Token Controller
+ */
+export const updateFcmToken = async (req, res) => {
+    try {
+        const { fcmToken } = req.body;
+        const { id, role } = req.user;
+
+        if (!fcmToken) {
+            return res.status(400).json({ success: false, message: 'FCM token is required' });
+        }
+
+        if (role === 'admin') {
+            const { updateAdminFcmToken } = await import('../models/AdminModel.js');
+            await updateAdminFcmToken(id, fcmToken);
+        } else {
+            const { updateStaffFcmToken } = await import('../models/Staff.js');
+            await updateStaffFcmToken(id, fcmToken);
+        }
+
+        res.status(200).json({ success: true, message: 'FCM token updated successfully' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to update FCM token', error: error.message });
+    }
+};

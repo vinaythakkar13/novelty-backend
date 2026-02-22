@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt';
 import { createOrder, getOrderByStaffId, getStaffOrderPipelineSummary, getUpcomingDeliveriesForStaff } from '../models/OrderModel.js';
 import pool, { query } from '../config/database.js';
 import { getTaskByStaffId, getTaskByStaffIdAndTaskId, getTasksForStaff, updateTaskStatus, getStaffTaskSummary, getUpcomingTasksPreview } from '../models/TaskModel.js';
+import { notifyAdmins } from '../services/notificationService.js';
 
 export const getAllStaff = async (req, res) => {
   try {
@@ -169,6 +170,9 @@ export const createOrderByStaffController = async (req, res) => {
       await conn.commit();
       conn.release();
 
+      // Trigger notification to admin
+      notifyAdmins('New Order Created', `A new order has been created by staff member for ${user_name}`);
+
       return res.status(201).json({
         success: true,
         message: 'Order created successfully',
@@ -178,8 +182,8 @@ export const createOrderByStaffController = async (req, res) => {
         }
       });
     } catch (err) {
-      try { await conn.rollback(); } catch {}
-      try { conn.release(); } catch {}
+      try { await conn.rollback(); } catch { }
+      try { conn.release(); } catch { }
       return res.status(500).json({ success: false, message: 'Failed to create order', error: err.message });
     }
   } catch (error) {
@@ -219,7 +223,7 @@ export const getTasksForStaffController = async (req, res) => {
 export const getAllCompletedTasksForStaffController = async (req, res) => {
   try {
     const staffId = req.user.id;
-    if(!staffId) {
+    if (!staffId) {
       return res.status(400).json({ success: false, message: 'Unable to resolve staff id' });
     }
     const tasks = await getTasksForStaff(staffId, true);
@@ -240,6 +244,14 @@ export const updateTaskStatusController = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Task not found' });
     }
     const result = await updateTaskStatus(task[0].task_id, status, reason);
+    console.log('Result: ', result)
+    // Trigger notification to admin
+    if (result.affectedRows > 0) {
+      console.log('Task updated successfully');
+      const staffName = req.user?.name || 'A staff member';
+      notifyAdmins('Task Updated', `${staffName} updated task "${task[0].title}" to ${status}`);
+    }
+
     return res.status(200).json({ success: true, message: result.message, data: result.data });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Failed to update task status' });
@@ -338,7 +350,7 @@ export const updateStaffCreatedOrderController = async (req, res) => {
       if (value === '0' || value === 0 || value === 'false') return 0;
       return value;
     };
-    
+
     const normalizeStatus = (status) => {
       if (!status || typeof status !== 'string') {
         return 'Pending';

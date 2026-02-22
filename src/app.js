@@ -7,6 +7,7 @@ import adminRoutes from './routes/adminRoutes.js';
 import { setupSwagger } from './config/swagger.js';
 import orderRoutes from './routes/orderRoutes.js';
 import taskRouter from './routes/taskRouter.js';
+import authRoutes from './routes/authRoutes.js';
 
 dotenv.config();
 
@@ -22,6 +23,8 @@ app.use(express.json());
 
 // Setup Swagger documentation
 setupSwagger(app);
+
+app.use('/api/auth', authRoutes);
 
 app.use('/api/staff', staffRoutes);
 

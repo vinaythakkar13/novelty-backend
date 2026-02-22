@@ -4,6 +4,7 @@ import { adminLoginFunction, createAdmin, deleteAdmin, getAllAdminsExceptLoggedI
 import { generateToken } from '../middleware/auth.js';
 import { getAllTasks, updateTaskStatus, getTaskByStaffId, createTaskForStaff, getAllTasksForStaff, deleteTaskForStaff, updateTaskDetails, getTaskById, getTaskByStaffIdAndTaskId } from '../models/TaskModel.js';
 import { deleteStaffById } from '../models/Staff.js';
+import { notifyStaff } from '../services/notificationService.js';
 
 export const adminLogin = async (req, res) => {
     const { email, password } = req.body;
@@ -14,7 +15,7 @@ export const adminLogin = async (req, res) => {
         }
 
         const adminData = admin[0];
-        const token = generateToken({ email: adminData.email, role: 'admin' }, '24h');
+        const token = generateToken({ id: adminData.id, email: adminData.email, role: 'admin' }, '24h');
         return res.status(200).json({
             success: true,
             message: 'Admin login successful',
@@ -179,6 +180,11 @@ export const createTaskForStaffController = async (req, res) => {
         const assignedBy = adminResult[0].id;
         const createdTask = await createTaskForStaff(title, id, deadlineDate, notes, assignedBy);
 
+        // Trigger notification to staff
+        if (createdTask && createdTask.insertId) {
+            notifyStaff(id, 'New Task Assigned', `You have been assigned a new task: ${title}`);
+        }
+
         // Get the created task with proper field mapping
         const getTaskSql = `SELECT id as task_id, title, staff_id, deadline, notes, assigned_by, assigned_at, status, created_at FROM tasks WHERE id = ?`;
         const taskResult = await query(getTaskSql, [createdTask.insertId]);
@@ -285,12 +291,16 @@ export const updateTaskStatusController = async (req, res) => {
             });
         }
 
-        // Map staff_id to assignee_id for API response
+        // Match staff_id to assignee_id for API response
         const taskData = {
             ...taskResult[0],
             task_id: taskResult[0].task_id,
             assignee_id: taskResult[0].staff_id
         };
+
+        // Notify staff member
+        notifyStaff(taskData.assignee_id, 'Task Status Updated', `Admin has updated your task "${taskData.title}" to ${status}`);
+
         delete taskData.staff_id;
 
         return res.status(200).json({
@@ -412,6 +422,9 @@ export const updateTaskDetailsController = async (req, res) => {
             reason: updatedTask.reason,
             created_at: updatedTask.created_at
         };
+
+        // Notify staff member
+        notifyStaff(taskData.assignee_id, 'Task Details Updated', `Admin has updated the details for your task "${taskData.title}"`);
 
         return res.status(200).json({
             success: true,

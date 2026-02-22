@@ -1,13 +1,14 @@
 import { query } from '../config/database.js';
 import bcrypt from 'bcrypt';
 
-export const createAdminTable =  async () => {
-    const sql =  `CREATE TABLE IF NOT EXISTS admins (
+export const createAdminTable = async () => {
+    const sql = `CREATE TABLE IF NOT EXISTS admins (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
     is_super_admin BOOLEAN DEFAULT FALSE,
+    fcm_token TEXT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`
 
@@ -45,7 +46,7 @@ export const getAllAdminsExceptLoggedInAdmin = async (email, search) => {
     return result;
 }
 
-export  const updateAdmin = async (adminData) => {
+export const updateAdmin = async (adminData) => {
     const { email, password } = adminData;
     const sql = `UPDATE admins SET password = ? WHERE email = ?`;
     const result = await query(sql, [password, email]);
@@ -67,6 +68,12 @@ export const adminLoginFunction = async (email, password) => {
     const isPasswordValid = await bcrypt.compare(password, admin[0].password);
     if (!isPasswordValid) {
         return null;
-    }   
+    }
     return admin;
+}
+
+export const updateAdminFcmToken = async (id, fcmToken) => {
+    const sql = `UPDATE admins SET fcm_token = ? WHERE id = ?`;
+    const result = await query(sql, [fcmToken, id]);
+    return result;
 }
