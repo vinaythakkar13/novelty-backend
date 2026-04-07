@@ -36,35 +36,58 @@ export const sendNotification = async (token, title, body, data = {}, recipientL
     }
 };
 
-export const notifyAdmins = async (title, body, data = {}) => {
+export const notifyAdmins = async (title, body, data = {}, excludeEmail = null) => {
     console.log('Notifying admins...');
     try {
-        const sql = `SELECT email, fcm_token FROM admins WHERE fcm_token IS NOT NULL`;
-        const admins = await query(sql);
+        let sql = `SELECT email, fcm_token FROM admins WHERE fcm_token IS NOT NULL`;
+        let params = [];
 
-        console.log(`Notifying ${admins.length} admins...`);
+        if (excludeEmail) {
+            sql += ` AND email != ?`;
+            params.push(excludeEmail);
+        }
+
+        const admins = await query(sql, params);
+
+        console.log(`Found ${admins.length} admins to notify. ${excludeEmail ? `(Excluded: ${excludeEmail})` : ''}`);
+
+        if (admins.length === 0) {
+            console.log('No admins with FCM tokens found.');
+            return [];
+        }
 
         const promises = admins.map(admin =>
-            sendNotification(admin.fcm_token, title, body, data, `Admin (${admin.email})`).catch(err => console.error(err))
+            sendNotification(admin.fcm_token, title, body, data, `Admin (${admin.email})`).catch(err => {
+                console.error(`Failed to notify admin ${admin.email}:`, err);
+                return null;
+            })
         );
 
         return Promise.all(promises);
     } catch (error) {
         console.error('Error in notifyAdmins:', error);
+        throw error;
     }
 };
 
-export const notifyStaff = async (staffId, title, body, data = {}) => {
+export const notifyStaff = async (staffId, title, body, data = {}, excludeToken = null) => {
+    console.log(`Notifying staff ID ${staffId}...`);
     try {
         const sql = `SELECT name, email, fcm_token FROM staff WHERE id = ? AND fcm_token IS NOT NULL`;
-        const [staff] = await query(sql, [staffId]);
+        const rows = await query(sql, [staffId]);
+        const staff = rows[0];
 
         if (staff && staff.fcm_token) {
+            if (excludeToken && staff.fcm_token === excludeToken) {
+                console.log(`Skipping notification for staff ${staff.email} as they are the performer.`);
+                return;
+            }
             return await sendNotification(staff.fcm_token, title, body, data, `Staff (${staff.name} - ${staff.email})`);
         } else {
             console.log(`No active FCM token found for staff ID ${staffId}`);
         }
     } catch (error) {
         console.error(`Error notifying staff ID ${staffId}:`, error);
+        throw error;
     }
 };

@@ -59,7 +59,7 @@ export const staffLogin = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid password' });
     }
 
-    const token = generateToken({ id: staff[0].id, staff_id: staff[0].staff_id, email: staff[0].email, role: 'staff' }, '24h');
+    const token = generateToken({ id: staff[0].id, staff_id: staff[0].staff_id, email: staff[0].email, name: staff[0].name, role: 'staff' }, '24h');
     const staffData = {
       id: staff[0].id,
       name: staff[0].name,
@@ -171,7 +171,8 @@ export const createOrderByStaffController = async (req, res) => {
       conn.release();
 
       // Trigger notification to admin
-      notifyAdmins('New Order Created', `A new order has been created by staff member for ${user_name}`);
+      const staffNameForOrder = req.user?.name || 'A staff member';
+      notifyAdmins('New Order Created', `${staffNameForOrder} created a new order for ${user_name}`, {}, req.user?.email);
 
       return res.status(201).json({
         success: true,
@@ -249,7 +250,8 @@ export const updateTaskStatusController = async (req, res) => {
     if (result.affectedRows > 0) {
       console.log('Task updated successfully');
       const staffName = req.user?.name || 'A staff member';
-      notifyAdmins('Task Updated', `${staffName} updated task "${task[0].title}" to ${status}`);
+      const formattedStatus = status ? status.replace(/_/g, ' ') : status;
+      notifyAdmins('Task Updated', `${staffName} updated task "${task[0].title}" to ${formattedStatus}`, {}, req.user?.email);
     }
 
     return res.status(200).json({ success: true, message: result.message, data: result.data });

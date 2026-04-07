@@ -13,7 +13,8 @@ export const createOrderController = async (req, res) => {
 
     // Trigger notification to admin
     if (order.success || (order.affectedRows && order.affectedRows > 0) || order.insertId) {
-      notifyAdmins('New Order Created', `A new order has been created for ${orderData.user_name}`);
+      const userName = req.user?.name || 'A user';
+      notifyAdmins('New Order Created', `${userName} created a new order for ${orderData.user_name}`, {}, req.user?.email);
     }
 
     res.status(201).json({ success: true, data: order });

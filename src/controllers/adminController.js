@@ -15,7 +15,7 @@ export const adminLogin = async (req, res) => {
         }
 
         const adminData = admin[0];
-        const token = generateToken({ id: adminData.id, email: adminData.email, role: 'admin' }, '24h');
+        const token = generateToken({ id: adminData.id, email: adminData.email, name: adminData.name, role: 'admin' }, '24h');
         return res.status(200).json({
             success: true,
             message: 'Admin login successful',
@@ -271,14 +271,14 @@ export const updateTaskStatusController = async (req, res) => {
         }
 
         // Validation: If status is blocked, reason is required
-        if (status === 'blocked' && (!notes || notes.trim() === '')) {
+        if (status === 'blocked' && (!reason || reason.trim() === '')) {
             return res.status(400).json({
                 success: false,
                 message: 'Reason is required when status is blocked'
             });
         }
 
-        const updatedTask = await updateTaskStatus(taskId, status, notes);
+        const updatedTask = await updateTaskStatus(taskId, status, reason);
 
         // Get the updated task to return complete data
         const getTaskSql = `SELECT id as task_id, title, staff_id, deadline, notes, assigned_by, assigned_at, completed_at, status, created_at FROM tasks WHERE id = ?`;
