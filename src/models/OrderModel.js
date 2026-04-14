@@ -63,12 +63,13 @@ export const createOrder = async (orderData) => {
         }
         else {
             const order_id = result.insertId;
-            for (const product of products) {
+            const productPromises = products.map(product => {
                 const { product_name, product_status } = product;
                 const sql = `INSERT INTO order_products (order_id, product_name, product_status, created_at) VALUES (?, ?, ?, NOW())`;
-                const result = await query(sql, [order_id, product_name, product_status, created_at]);
-                return result;
-            }
+                return query(sql, [order_id, product_name, product_status]);
+            });
+            await Promise.all(productPromises);
+            return { success: true, insertId: order_id };
         }
     }
     catch (error) {
@@ -370,11 +371,11 @@ export const updateOrderProductsStatus = async (orderId, products = [], staffId)
 
     // Map incoming status keys to DB enum values
     const statusMap = {
-        'pending': 'Pending',
-        'material_requested': 'Material Requested',
-        'material_received': 'Material Received',
-        'sent_to_workers': 'Sent To Workers',
-        'final_product_received': 'Final Product Received'
+        'pending': 'pending',
+        'material_requested': 'material_requested',
+        'material_received': 'material_received',
+        'sent_to_workers': 'sent_to_workers',
+        'final_product_received': 'final_product_received'
     };
 
     // Validate all requested statuses before updating
